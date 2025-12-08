@@ -1,0 +1,49 @@
+import os
+
+# 清除代理环境变量，防止干扰 Selenium-ChromeDriver 通信
+for proxy_var in ['http_proxy', 'https_proxy', 'all_proxy',
+                   'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']:
+    os.environ.pop(proxy_var, None)
+
+import time
+import json
+
+from xhs.liulanqi import get_driver
+
+COOKING_PATH = "cookies"
+os.makedirs(COOKING_PATH, exist_ok=True)
+
+XIAOHONGSHU_COOKING = os.path.join(COOKING_PATH, "xiaohongshu.json")
+
+def save_current_cookies(driver):
+    """获取并保存当前页面的 cookies"""
+    # 确保页面已完全加载
+    time.sleep(5)
+    
+    # 获取当前页面的所有 cookies
+    cookies = driver.get_cookies()
+    
+    # 保存 cookies 到文件
+    with open(XIAOHONGSHU_COOKING, 'w') as f:
+        json.dump(cookies, f)
+    
+    return cookies
+
+def manual_login_and_save_cookies():
+    driver = get_driver()
+    try:
+        # 打开登录页面
+        driver.get('https://creator.xiaohongshu.com/creator/post')
+        
+        # 等待手动登录完成
+        input("请在浏览器中完成登录，然后按回车继续...")
+        
+        # 保存 cookies
+        cookies = save_current_cookies(driver)
+        print(f"已保存 {len(cookies)} 个 cookies")
+        
+    finally:
+        driver.quit()
+
+if __name__ == '__main__':
+    manual_login_and_save_cookies()
