@@ -1,10 +1,4 @@
 import os
-
-# 清除代理环境变量，防止干扰 Selenium-ChromeDriver 通信
-for proxy_var in ['http_proxy', 'https_proxy', 'all_proxy',
-                   'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']:
-    os.environ.pop(proxy_var, None)
-
 import time
 import json
 
