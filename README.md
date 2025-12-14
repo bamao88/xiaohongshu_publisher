@@ -217,12 +217,12 @@ curl -X POST "http://localhost:8000/publish" \
 |------|------|------|------|
 | `content_type` | string | ✅ | `"image"` 图文 / `"video"` 视频 |
 | `name` | string | ✅ | 任务备注名（仅用于日志，不显示在笔记中）|
-| `tags` | array/string | ✅ | 标签，如 `["标签1", "标签2"]` 或 `"标签1,标签2"` |
+| `tags` | array/string | ✅ | 标签，如 `["标签1", "标签2"]` 或 `"#标签1 #标签2"`（支持中文）|
 | `content.title` | string | ✅ | 笔记标题（**最多20字**）|
-| `content.script` | string | ✅ | 笔记正文 |
-| `image_urls` | array | 图文必填 | 图片URL列表（**1-9张**，必须是 http/https）|
+| `content.script` | string | ✅ | 笔记正文（支持换行符 `\n`）|
+| `image_urls` | array/string | 图文必填 | 图片URL，支持数组或换行分隔字符串（**1-9张**）|
 | `video_url` | string | 视频可选 | 视频URL |
-| `publish_time` | string | 可选 | 定时发布，格式: `"YYYY-MM-DD HH:MM"`，不填则默认5分钟后 |
+| `publish_time` | string | 可选 | 定时发布，格式: `"YYYY-MM-DD HH:MM"`，不填则立刻发布 |
 
 **请求示例：**
 

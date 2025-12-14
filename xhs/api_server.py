@@ -39,7 +39,7 @@ class PublishRequest(BaseModel):
     content: ContentData
     content_type: str = "video"  # "video" or "image"
     video_url: Optional[HttpUrl] = None
-    image_urls: Optional[List[HttpUrl]] = None  # New field for multiple images
+    image_urls: Optional[Union[List[str], str]] = None  # 支持数组或换行分隔字符串
     publish_time: Optional[str] = None
 
     @field_validator('content_type')
@@ -47,6 +47,15 @@ class PublishRequest(BaseModel):
     def validate_content_type(cls, v):
         if v not in ['video', 'image']:
             raise ValueError('content_type must be "video" or "image"')
+        return v
+
+    @field_validator('image_urls', mode='before')
+    @classmethod
+    def parse_image_urls(cls, v):
+        """将换行分隔的字符串转换为列表"""
+        if isinstance(v, str):
+            urls = [url.strip() for url in v.split('\n') if url.strip()]
+            return urls
         return v
 
     @field_validator('image_urls')
@@ -212,11 +221,8 @@ async def publish_content(request: PublishRequest):
         # Parse tags (handles both string and list formats)
         parsed_tags = parse_tags(request.tags)
 
-        # Set default publish time if not provided (5 minutes from now)
+        # publish_time 为 None 表示立刻发布
         publish_time = request.publish_time
-        if not publish_time:
-            default_time = datetime.now() + timedelta(minutes=5)
-            publish_time = default_time.strftime('%Y-%m-%d %H:%M')
 
         # Prepare content data in the format expected by the publish function
         scripts_data = {

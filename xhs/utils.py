@@ -41,20 +41,30 @@ async def download_image(image_url: str, output_path: str) -> bool:
             response = await client.get(image_url, follow_redirects=True)
             response.raise_for_status()
 
-            # Verify content type is image
-            content_type = response.headers.get('content-type', '')
-            if not content_type.startswith('image/'):
-                print(f"URL is not an image: {content_type}")
-                return False
-
-            # Ensure directory exists
+            # Save the file first
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
             with open(output_path, "wb") as f:
                 f.write(response.content)
 
-            print(f"Image downloaded: {output_path}")
-            return True
+            # Verify it's a valid image by trying to open it
+            try:
+                from PIL import Image
+                with Image.open(output_path) as img:
+                    img.verify()  # Verify it's a valid image
+                print(f"Image downloaded: {output_path}")
+                return True
+            except ImportError:
+                # Pillow not installed, trust content-type header
+                content_type = response.headers.get('content-type', '')
+                if content_type.startswith('image/') or content_type == 'application/octet-stream':
+                    print(f"Image downloaded: {output_path}")
+                    return True
+                print(f"URL may not be an image: {content_type}")
+                return False
+            except Exception as e:
+                print(f"Downloaded file is not a valid image: {e}")
+                os.remove(output_path)
+                return False
 
     except Exception as e:
         print(f"Image download failed: {e}")
@@ -143,13 +153,16 @@ def validate_image(image_path: str) -> bool:
 
 
 def parse_tags(tags: Union[str, List[str]]) -> List[str]:
-    """Parse tags from string "#tag1 #tag2" or list ["tag1", "tag2"] format."""
+    """Parse tags from string "#tag1 #tag2" or list ["tag1", "tag2"] format.
+
+    Supports Chinese characters in tags.
+    """
     if isinstance(tags, list):
         return [tag.lstrip('#') for tag in tags]
 
     if isinstance(tags, str):
-        # Extract hashtags: #tag1 #tag2 -> ["tag1", "tag2"]
-        matches = re.findall(r'#(\w+)', tags)
+        # Extract hashtags with Chinese support: #tag1 #标签2 -> ["tag1", "标签2"]
+        matches = re.findall(r'#([\w\u4e00-\u9fff]+)', tags)
         if matches:
             return matches
         # Fallback: split by spaces

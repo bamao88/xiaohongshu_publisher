@@ -297,8 +297,8 @@ def publish_xiaohongshu_image(driver, scripts, publish_time="2025-01-12 16:00", 
             (By.XPATH, '//div[@contenteditable="true"]')
         ],
     )
-    info = content["script"]
-    driver.execute_script("arguments[0].innerText = arguments[1];", content_elem, info)
+    info = content["script"].replace('\n', '<br>')
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", content_elem, info)
     driver.execute_script("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", content_elem)
 
     time.sleep(1)
@@ -307,29 +307,30 @@ def publish_xiaohongshu_image(driver, scripts, publish_time="2025-01-12 16:00", 
     tags = scripts.get("tags", [])
     input_tags_improved(driver, content_elem, tags)
 
-    # 6. 定时发布
-    schedule_button = driver.find_element(
-        By.XPATH,
-        '//span[contains(@class, "el-radio__label") and text()="定时发布"]'
-    )
-    time.sleep(2)
-    print("点击定时发布")
-    driver.execute_script("arguments[0].click();", schedule_button)
+    # 6. 定时发布（仅当 publish_time 有值时）
+    if publish_time:
+        schedule_button = driver.find_element(
+            By.XPATH,
+            '//span[contains(@class, "el-radio__label") and text()="定时发布"]'
+        )
+        time.sleep(2)
+        print("点击定时发布")
+        driver.execute_script("arguments[0].click();", schedule_button)
 
-    time.sleep(5)
+        time.sleep(5)
 
-    # 找到时间输入框并输入时间
-    input_time = WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.XPATH, '//input[@placeholder="选择日期和时间"]'))
-    )
-    driver.execute_script('arguments[0].removeAttribute("readonly");', input_time)
-    input_time.clear()
-    input_time.send_keys(Keys.CONTROL, 'a')
-    input_time.send_keys(Keys.DELETE)
-    time.sleep(0.5)
-    input_time.send_keys(publish_time)
-    input_time.send_keys(Keys.TAB)
-    time.sleep(1)
+        # 找到时间输入框并输入时间
+        input_time = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//input[@placeholder="选择日期和时间"]'))
+        )
+        driver.execute_script('arguments[0].removeAttribute("readonly");', input_time)
+        input_time.clear()
+        input_time.send_keys(Keys.CONTROL, 'a')
+        input_time.send_keys(Keys.DELETE)
+        time.sleep(0.5)
+        input_time.send_keys(publish_time)
+        input_time.send_keys(Keys.TAB)
+        time.sleep(1)
 
     # 7. 点击发布按钮（图文）
     # 尝试使用参考仓库的选择器
@@ -341,11 +342,12 @@ def publish_xiaohongshu_image(driver, scripts, publish_time="2025-01-12 16:00", 
             ))
         )
     except:
-        # 回退到原来的选择器
+        # 回退到原来的选择器，根据是否定时发布选择不同按钮
+        button_text = "定时发布" if publish_time else "发布"
         submit_button = WebDriverWait(driver, 30).until(
             EC.element_to_be_clickable((
                 By.XPATH,
-                '//span[contains(@class, "d-text") and text()="定时发布"]'
+                f'//span[contains(@class, "d-text") and text()="{button_text}"]'
             ))
         )
 
@@ -397,10 +399,10 @@ def publish_xiaohongshu(driver, scripts, publish_time="2025-01-12 16:00", video_
             (By.XPATH, '//div[@contenteditable="true"]')
         ],
     )
-    info = content["script"]
+    info = content["script"].replace('\n', '<br>')
     print(info)
     # 使用JavaScript设置内容，避免emoji问题
-    driver.execute_script("arguments[0].innerText = arguments[1];", content_clink, info)
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", content_clink, info)
     driver.execute_script("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", content_clink) 
     
     time.sleep(3)
@@ -419,36 +421,38 @@ def publish_xiaohongshu(driver, scripts, publish_time="2025-01-12 16:00", video_
         content_clink.send_keys(Keys.ENTER)
         time.sleep(0.3)
 
-    # 定时发布按钮定位
-    schedule_button = driver.find_element(
-        By.XPATH, 
-        '//span[contains(@class, "el-radio__label") and text()="定时发布"]'
-    )
-    time.sleep(2)
-    print("点击定时发布")
-    # 使用 JavaScript 执行点击，而不是直接点击
-    driver.execute_script("arguments[0].click();", schedule_button)
+    # 定时发布（仅当 publish_time 有值时）
+    if publish_time:
+        schedule_button = driver.find_element(
+            By.XPATH,
+            '//span[contains(@class, "el-radio__label") and text()="定时发布"]'
+        )
+        time.sleep(2)
+        print("点击定时发布")
+        # 使用 JavaScript 执行点击，而不是直接点击
+        driver.execute_script("arguments[0].click();", schedule_button)
 
-    time.sleep(5)
-    # 找到时间输入框并输入时间
-    input_time = WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.XPATH, '//input[@placeholder="选择日期和时间"]'))
-    )
-    # 解除只读并填写时间
-    driver.execute_script('arguments[0].removeAttribute("readonly");', input_time)
-    input_time.clear()
-    input_time.send_keys(Keys.CONTROL, 'a')
-    input_time.send_keys(Keys.DELETE)
-    time.sleep(0.5)
-    input_time.send_keys(publish_time)
-    input_time.send_keys(Keys.TAB)
-    time.sleep(1)
+        time.sleep(5)
+        # 找到时间输入框并输入时间
+        input_time = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//input[@placeholder="选择日期和时间"]'))
+        )
+        # 解除只读并填写时间
+        driver.execute_script('arguments[0].removeAttribute("readonly");', input_time)
+        input_time.clear()
+        input_time.send_keys(Keys.CONTROL, 'a')
+        input_time.send_keys(Keys.DELETE)
+        time.sleep(0.5)
+        input_time.send_keys(publish_time)
+        input_time.send_keys(Keys.TAB)
+        time.sleep(1)
 
     # 等待发布按钮变为可点击状态
+    button_text = "定时发布" if publish_time else "发布"
     publish_button = WebDriverWait(driver, 60).until(
         EC.element_to_be_clickable((
             By.XPATH,
-            '//span[contains(@class, "d-text") and text()="定时发布"]'
+            f'//span[contains(@class, "d-text") and text()="{button_text}"]'
         ))
     )
     # 滚动到按钮位置并使用JavaScript点击，避免被其他元素遮挡
@@ -459,7 +463,7 @@ def publish_xiaohongshu(driver, scripts, publish_time="2025-01-12 16:00", video_
     except Exception:
         # 如果普通点击失败，使用JavaScript点击
         driver.execute_script("arguments[0].click();", publish_button)
-    print("已点击定时发布按钮")
+    print(f"已点击{button_text}按钮")
     time.sleep(3)  # 等待发布完成
 
     print("视频发布完成！")
